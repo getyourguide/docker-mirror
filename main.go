@@ -107,8 +107,15 @@ func main() {
 	// init AWS client
 	log.Info("Creating AWS client")
 	cfg, err := awsconfig.LoadDefaultConfig(context.TODO())
+
 	if err != nil {
 		log.Fatalf("Unable to load AWS SDK config, " + err.Error())
+	}
+
+	// Work around - https://github.com/aws/aws-sdk-go-v2/issues/914
+	_, err = cfg.Credentials.Retrieve(context.Background())
+	if err != nil {
+		log.Fatal(err)
 	}
 
 	// pre-load ECR repositories
