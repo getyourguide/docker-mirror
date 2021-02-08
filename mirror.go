@@ -296,9 +296,7 @@ func (m *mirror) getRemoteTags() ([]RepositoryTag, error) {
                 log.Infof("Rate limited, sleeping")
                 time.Sleep(2 * time.Second)
                 continue
-            }
-
-            if err != nil {
+            } else if err != nil {
                 log.Warningf("Failed to get %s, retrying", url)
                 retries -= 1
             } else if r.StatusCode < 200 || r.StatusCode >= 300 {
