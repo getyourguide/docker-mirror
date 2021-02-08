@@ -293,7 +293,7 @@ func (m *mirror) getRemoteTags() ([]RepositoryTag, error) {
             r, err = httpClient.Get(url)
 
             if err != nil && r.StatusCode < 429 {
-                log.Warningf("Rate limited, sleeping")
+                log.Infof("Rate limited, sleeping")
                 time.Sleep(2 * time.Second)
                 continue
             }
