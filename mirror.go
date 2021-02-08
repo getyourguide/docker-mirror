@@ -291,13 +291,17 @@ func (m *mirror) getRemoteTags() ([]RepositoryTag, error) {
 
         for retries > 0 {
             r, err = httpClient.Get(url)
-            if err != nil {
+
+            if err != nil && r.StatusCode < 429 {
+                log.Warningf("Rate limited, sleeping")
+                time.Sleep(2 * time.Second)
+                continue
+            }
+
+            if err != nil || r.StatusCode < 200 || r.StatusCode >= 300 {
                 log.Warningf("Failed to get %s, retrying", url)
                 retries -= 1
             } else {
-                if r.StatusCode < 200 || r.StatusCode >= 300 {
-                    log.Warningf("Status code %d while getting tags", r.StatusCode)
-                }
                 break
             }
         }
