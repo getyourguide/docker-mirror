@@ -254,6 +254,8 @@ func (m *mirror) getRemoteTags() ([]RepositoryTag, error) {
 			return nil, fmt.Errorf("Invalid/missing int value for remote_tag_config -> num_releases")
 		}
 
+		m.log.Debugf("Getting remote tags for %s/%s",m.repo.RemoteTagConfig["owner"], m.repo.RemoteTagConfig["repo"])
+
 		remoteTags, _, err := client.Repositories.ListTags(context.Background(), m.repo.RemoteTagConfig["owner"], m.repo.RemoteTagConfig["repo"], &github.ListOptions{PerPage: limit})
 		if err != nil {
 			return nil, err
@@ -265,6 +267,8 @@ func (m *mirror) getRemoteTags() ([]RepositoryTag, error) {
 				Name: strings.TrimPrefix(*tag.Name, "v"),
 			})
 		}
+
+		m.log.Debugf("Fetched %d remote tags for %s/%s", len(allTags), m.repo.RemoteTagConfig["owner"], m.repo.RemoteTagConfig["repo"])
 
 		return allTags, nil
 	}
@@ -286,9 +290,16 @@ func (m *mirror) getRemoteTags() ([]RepositoryTag, error) {
         )
 
         for retries > 0 {
-                r, err = httpClient.Get(url)
+            r, err = httpClient.Get(url)
+
             if err != nil {
                 log.Warningf("Failed to get %s, retrying", url)
+                retries -= 1
+            } else if r.StatusCode == 429 {
+                log.Infof("Rate limited on %s, sleeping for 10s", url)
+                time.Sleep(10 * time.Second)
+            } else if r.StatusCode < 200 || r.StatusCode >= 300 {
+                log.Warningf("Get %s failed with %d, retrying", url, r.StatusCode)
                 retries -= 1
             } else {
                 break
